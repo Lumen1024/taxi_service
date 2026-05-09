@@ -23,7 +23,6 @@ subprojects {
 
     dependencies {
         implementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.6"))
-        implementation(platform("org.springframework.cloud:spring-cloud-dependencies:2025.0.6"))
         compileOnly(platform("org.springframework.boot:spring-boot-dependencies:4.0.6"))
         annotationProcessor(platform("org.springframework.boot:spring-boot-dependencies:4.0.6"))
         compileOnly("org.projectlombok:lombok")
