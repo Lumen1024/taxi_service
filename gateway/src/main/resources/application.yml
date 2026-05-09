@@ -1,0 +1,10 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+
+jwt:
+  secret: this-is-a-secret-key-for-jwt-signing-must-be-at-least-256-bits-long
+  expiration-ms: 86400000
