@@ -18,13 +18,11 @@ public class JwtService {
         this.expirationMs = expirationMs;
     }
 
-    public String generateToken(Long userId, String role, Long passengerId, Long driverId) {
+    public String generateToken(Long userId, String role) {
         Date now = new Date();
         return Jwts.builder()
             .subject(userId.toString())
             .claim("role", role)
-            .claim("passengerId", passengerId)
-            .claim("driverId", driverId)
             .issuedAt(now)
             .expiration(new Date(now.getTime() + expirationMs))
             .signWith(key)

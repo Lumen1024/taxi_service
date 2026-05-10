@@ -7,7 +7,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "drivers", indexes = {
     @Index(name = "idx_drivers_status", columnList = "status")
-})
+}) // todo: bad idea
 @Getter
 @Setter
 @NoArgsConstructor
