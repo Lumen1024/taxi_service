@@ -5,8 +5,10 @@ plugins {
 dependencies {
     api("org.springframework:spring-web")
     api("org.springframework.security:spring-security-core")
+    api("org.springframework.boot:spring-boot-autoconfigure")
     api("io.jsonwebtoken:jjwt-api:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
     compileOnly("jakarta.servlet:jakarta.servlet-api")
+    compileOnly("org.slf4j:slf4j-api")
 }

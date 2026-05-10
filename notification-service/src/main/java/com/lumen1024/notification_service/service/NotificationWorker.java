@@ -59,7 +59,7 @@ public class NotificationWorker {
             try {
                 Long taskId = claimTask();
                 if (taskId == null) {
-                    Thread.sleep(500);
+                    Thread.sleep(5000);
                     continue;
                 }
 

@@ -4,6 +4,12 @@ server:
 spring:
   application:
     name: gateway
+  cloud:
+    discovery:
+      enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
 
 jwt:
   secret: this-is-a-secret-key-for-jwt-signing-must-be-at-least-256-bits-long

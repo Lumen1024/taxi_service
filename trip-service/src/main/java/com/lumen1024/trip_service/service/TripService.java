@@ -197,8 +197,8 @@ public class TripService {
         Object[] row = result.get(0);
 
         long count = ((Number) row[0]).longValue();
-        BigDecimal avgPrice = (BigDecimal) row[1];
-        BigDecimal totalRevenue = (BigDecimal) row[2];
+        BigDecimal avgPrice = toBigDecimal((Number) row[1]);
+        BigDecimal totalRevenue = toBigDecimal((Number) row[2]);
 
         return new StatsResponse(count, avgPrice, totalRevenue);
     }
@@ -216,6 +216,12 @@ public class TripService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Coordinates must be in 'lat,lon' format: " + coords);
         }
         return new double[]{Double.parseDouble(parts[0].trim()), Double.parseDouble(parts[1].trim())};
+    }
+
+    private BigDecimal toBigDecimal(Number value) {
+        if (value == null) return BigDecimal.ZERO;
+        if (value instanceof BigDecimal bd) return bd;
+        return BigDecimal.valueOf(value.doubleValue());
     }
 
     private void sendEvent(Trip trip, String event, String message, Long recipientId, String recipientType) {

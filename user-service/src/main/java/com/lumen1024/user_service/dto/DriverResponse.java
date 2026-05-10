@@ -8,17 +8,15 @@ public record DriverResponse(
     String name,
     String phone,
     String licenseNumber,
-    DriverStatus status,
-    String email
+    DriverStatus status
 ) {
-    public static DriverResponse from(Driver driver, String email) {
+    public static DriverResponse from(Driver driver) {
         return new DriverResponse(
             driver.getId(),
             driver.getName(),
             driver.getPhone(),
             driver.getLicenseNumber(),
-            driver.getStatus(),
-            email
+            driver.getStatus()
         );
     }
 }
