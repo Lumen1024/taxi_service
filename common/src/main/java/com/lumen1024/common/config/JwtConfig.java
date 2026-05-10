@@ -1,4 +1,4 @@
-package com.lumen1024.gateway.config;
+package com.lumen1024.common.config;
 
 import com.lumen1024.common.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
