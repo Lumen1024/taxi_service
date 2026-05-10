@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Objects;
+
 @RestController
 @RequestMapping("/profile")
 @RequiredArgsConstructor
@@ -29,7 +31,7 @@ public class ProfileController {
     }
 
     private Long getCurrentUserId() {
-        String name = SecurityContextHolder.getContext().getAuthentication().getName();
+        String name = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
         return Long.parseLong(name);
     }
 }

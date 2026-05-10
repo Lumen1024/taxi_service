@@ -1,5 +1,6 @@
 package com.lumen1024.common.config;
 
+import com.lumen1024.common.security.JwtAuthFilter;
 import com.lumen1024.common.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -14,5 +15,10 @@ public class JwtConfig {
         @Value("${jwt.expiration-ms}") long expirationMs
     ) {
         return new JwtService(secret, expirationMs);
+    }
+
+    @Bean
+    public JwtAuthFilter jwtAuthFilter(JwtService jwtService) {
+        return new JwtAuthFilter(jwtService);
     }
 }

@@ -1,8 +1,9 @@
 package com.lumen1024.trip_service.service;
 
+import com.lumen1024.trip_service.client.UserServiceClient;
 import com.lumen1024.trip_service.dto.RateRequest;
 import com.lumen1024.trip_service.dto.StatsResponse;
-import com.lumen1024.trip_service.dto.TripEvent;
+import com.lumen1024.common.dto.TripEvent;
 import com.lumen1024.trip_service.dto.TripResponse;
 import com.lumen1024.trip_service.dto.UpdateStatusRequest;
 import com.lumen1024.trip_service.entity.Trip;
@@ -11,11 +12,8 @@ import com.lumen1024.trip_service.repository.TripRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -24,7 +22,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -32,39 +29,22 @@ import java.util.Map;
 public class TripService {
 
     private final TripRepository tripRepository;
-    private final RestTemplate restTemplate;
+    private final UserServiceClient userServiceClient;
     private final RabbitTemplate rabbitTemplate;
-
-    @Value("${user-service.url:http://localhost:8081}")
-    private String userServiceUrl;
 
     @Value("${trip.tariff:50.0}")
     private BigDecimal tariff;
 
     public TripResponse createTrip(Long userId, String origin, String destination) {
-        UserInfo user = resolveUser(userId);
+        var user = userServiceClient.getUser(userId);
 
         if (!"PASSENGER".equals(user.role())) {
             throw new SecurityException("Only passengers can create trips");
         }
 
-        restTemplate.getForObject(
-            userServiceUrl + "/passengers/{id}", Object.class, user.passengerId()
-        );
+        userServiceClient.verifyPassenger(user.passengerId());
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> driver;
-        try {
-            driver = restTemplate.postForObject(userServiceUrl + "/drivers/acquire", null, Map.class);
-        } catch (Exception e) {
-            throw new IllegalStateException("No free drivers available");
-        }
-
-        if (driver == null || driver.get("id") == null) {
-            throw new IllegalStateException("No free drivers available");
-        }
-
-        Long driverId = ((Number) driver.get("id")).longValue();
+        Long driverId = userServiceClient.acquireDriver();
         BigDecimal price = calculatePrice(origin, destination);
 
         Trip trip = Trip.builder()
@@ -85,7 +65,7 @@ public class TripService {
 
     @Transactional(readOnly = true)
     public List<TripResponse> getTripHistory(Long userId) {
-        UserInfo user = resolveUser(userId);
+        var user = userServiceClient.getUser(userId);
 
         if ("PASSENGER".equals(user.role())) {
             return tripRepository.findAllByPassenger(user.passengerId())
@@ -104,7 +84,7 @@ public class TripService {
         Trip trip = tripRepository.findById(tripId)
             .orElseThrow(() -> new IllegalArgumentException("Trip not found"));
 
-        UserInfo user = resolveUser(userId);
+        var user = userServiceClient.getUser(userId);
 
         boolean isPassenger = "PASSENGER".equals(user.role())
             && trip.getPassengerId().equals(user.passengerId());
@@ -122,7 +102,7 @@ public class TripService {
         Trip trip = tripRepository.findById(tripId)
             .orElseThrow(() -> new IllegalArgumentException("Trip not found"));
 
-        UserInfo user = resolveUser(userId);
+        var user = userServiceClient.getUser(userId);
         TripStatus newStatus = request.status();
 
         switch (newStatus) {
@@ -150,7 +130,7 @@ public class TripService {
                     throw new IllegalStateException("Trip must be in IN_PROGRESS status");
                 }
                 trip.setStatus(TripStatus.COMPLETED);
-                freeDriver(trip.getDriverId());
+                userServiceClient.freeDriver(trip.getDriverId());
                 sendEvent(trip, "TRIP_COMPLETED", "Поездка завершена", trip.getPassengerId(), "PASSENGER");
             }
             case CANCELLED -> {
@@ -165,7 +145,7 @@ public class TripService {
                     throw new IllegalStateException("Trip cannot be cancelled in its current status");
                 }
                 trip.setStatus(TripStatus.CANCELLED);
-                freeDriver(trip.getDriverId());
+                userServiceClient.freeDriver(trip.getDriverId());
                 sendEvent(trip, "TRIP_CANCELLED", "Пассажир отменил поездку", trip.getDriverId(), "DRIVER");
             }
             case WAITING_DRIVER ->
@@ -177,7 +157,7 @@ public class TripService {
     }
 
     public TripResponse rateTrip(Long tripId, int rating, Long userId) {
-        UserInfo user = resolveUser(userId);
+        var user = userServiceClient.getUser(userId);
 
         if (!"PASSENGER".equals(user.role())) {
             throw new SecurityException("Only passengers can rate trips");
@@ -201,7 +181,7 @@ public class TripService {
 
     @Transactional(readOnly = true)
     public StatsResponse getStats(String dateStr, Long userId) {
-        UserInfo user = resolveUser(userId);
+        var user = userServiceClient.getUser(userId);
 
         if (!"DRIVER".equals(user.role())) {
             throw new SecurityException("Only drivers can view stats");
@@ -221,26 +201,6 @@ public class TripService {
         return new StatsResponse(count, avgPrice, totalRevenue);
     }
 
-    private UserInfo resolveUser(Long userId) {
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> user = restTemplate.getForObject(
-                userServiceUrl + "/users/{id}", Map.class, userId
-            );
-            if (user == null) {
-                throw new IllegalArgumentException("User not found");
-            }
-            return new UserInfo(
-                userId,
-                (String) user.get("role"),
-                user.get("passengerId") != null ? ((Number) user.get("passengerId")).longValue() : null,
-                user.get("driverId") != null ? ((Number) user.get("driverId")).longValue() : null
-            );
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to resolve user: " + e.getMessage(), e);
-        }
-    }
-
     private BigDecimal calculatePrice(String origin, String destination) {
         double[] o = parseCoordinates(origin);
         double[] d = parseCoordinates(destination);
@@ -256,20 +216,6 @@ public class TripService {
         return new double[]{Double.parseDouble(parts[0].trim()), Double.parseDouble(parts[1].trim())};
     }
 
-    private void freeDriver(Long driverId) {
-        try {
-            restTemplate.exchange(
-                userServiceUrl + "/drivers/{id}/status",
-                HttpMethod.PATCH,
-                new HttpEntity<>(Map.of("status", "FREE")),
-                Object.class,
-                driverId
-            );
-        } catch (Exception e) {
-            // best-effort
-        }
-    }
-
     private void sendEvent(Trip trip, String event, String message, Long recipientId, String recipientType) {
         try {
             TripEvent tripEvent = new TripEvent(
@@ -283,5 +229,4 @@ public class TripService {
         }
     }
 
-    private record UserInfo(Long id, String role, Long passengerId, Long driverId) {}
 }

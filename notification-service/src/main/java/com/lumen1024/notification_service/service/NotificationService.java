@@ -1,7 +1,7 @@
 package com.lumen1024.notification_service.service;
 
+import com.lumen1024.common.dto.TripEvent;
 import com.lumen1024.notification_service.dto.NotificationResponse;
-import com.lumen1024.notification_service.dto.TripEvent;
 import com.lumen1024.notification_service.entity.NotificationStatus;
 import com.lumen1024.notification_service.entity.NotificationTask;
 import com.lumen1024.notification_service.repository.NotificationTaskRepository;

@@ -1,4 +1,4 @@
-package com.lumen1024.notification_service.dto;
+package com.lumen1024.common.dto;
 
 public record TripEvent(
     Long tripId,
