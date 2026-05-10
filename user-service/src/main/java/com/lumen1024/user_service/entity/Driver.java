@@ -40,7 +40,7 @@ public class Driver {
     void onCreate() {
         createdAt = Instant.now();
         if (status == null) {
-            status = DriverStatus.OFFLINE;
+            status = DriverStatus.FREE;
         }
     }
 }

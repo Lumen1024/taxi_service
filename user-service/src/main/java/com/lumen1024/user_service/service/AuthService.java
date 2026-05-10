@@ -7,9 +7,11 @@ import com.lumen1024.common.security.JwtService;
 import com.lumen1024.user_service.entity.*;
 import com.lumen1024.user_service.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ public class AuthService {
     @Transactional
     public LoginResponse register(RegisterRequest request) {
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("Email already registered");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
 
         Long passengerId = null;
@@ -42,7 +44,7 @@ public class AuthService {
                 .name(request.name())
                 .phone(request.phone())
                 .licenseNumber(request.licenseNumber())
-                .status(DriverStatus.OFFLINE)
+                .status(DriverStatus.FREE)
                 .build();
             driver = driverRepository.save(driver);
             driverId = driver.getId();
@@ -63,10 +65,10 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
-            .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid email or password");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }
 
         String token = jwtService.generateToken(user.getId(), user.getRole().name());

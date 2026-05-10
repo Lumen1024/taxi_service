@@ -1,7 +1,6 @@
 package com.lumen1024.gateway.config;
 
 import com.lumen1024.common.security.JwtService;
-import io.jsonwebtoken.Claims;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.http.HttpHeaders;
@@ -29,16 +28,8 @@ public class JwtGatewayFilter implements GatewayFilter {
         }
 
         try {
-            Claims claims = jwtService.validate(header.substring(7));
-            String role = claims.get("role", String.class);
-            String userId = claims.getSubject();
-
-            var request = exchange.getRequest().mutate()
-                .header("X-User-Id", userId)
-                .header("X-User-Role", role)
-                .build();
-
-            return chain.filter(exchange.mutate().request(request).build());
+            jwtService.validate(header.substring(7));
+            return chain.filter(exchange);
         } catch (Exception e) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();

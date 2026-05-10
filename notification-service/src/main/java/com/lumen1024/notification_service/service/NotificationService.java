@@ -8,8 +8,10 @@ import com.lumen1024.notification_service.repository.NotificationTaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -49,10 +51,10 @@ public class NotificationService {
     @Transactional
     public NotificationResponse markAsRead(Long notificationId, Long userId) {
         NotificationTask task = notificationTaskRepository.findById(notificationId)
-            .orElseThrow(() -> new IllegalArgumentException("Notification not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification not found"));
 
         if (!task.getRecipientId().equals(userId)) {
-            throw new SecurityException("Access denied");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
         task.setRead(true);

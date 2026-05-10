@@ -10,9 +10,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/trips")
@@ -22,52 +24,44 @@ public class TripController {
     private final TripService tripService;
 
     @PostMapping
-    public ResponseEntity<TripResponse> createTrip(
-        @Valid @RequestBody CreateTripRequest request,
-        @RequestHeader("X-User-Id") Long userId
-    ) {
+    public ResponseEntity<TripResponse> createTrip(@Valid @RequestBody CreateTripRequest request) {
+        Long userId = getCurrentUserId();
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(tripService.createTrip(userId, request.origin(), request.destination()));
     }
 
     @GetMapping
-    public ResponseEntity<List<TripResponse>> getHistory(
-        @RequestHeader("X-User-Id") Long userId
-    ) {
+    public ResponseEntity<List<TripResponse>> getHistory() {
+        Long userId = getCurrentUserId();
         return ResponseEntity.ok(tripService.getTripHistory(userId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TripResponse> getTrip(
-        @PathVariable Long id,
-        @RequestHeader("X-User-Id") Long userId
-    ) {
+    public ResponseEntity<TripResponse> getTrip(@PathVariable Long id) {
+        Long userId = getCurrentUserId();
         return ResponseEntity.ok(tripService.getTrip(id, userId));
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<TripResponse> updateStatus(
-        @PathVariable Long id,
-        @Valid @RequestBody UpdateStatusRequest request,
-        @RequestHeader("X-User-Id") Long userId
-    ) {
+    public ResponseEntity<TripResponse> updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateStatusRequest request) {
+        Long userId = getCurrentUserId();
         return ResponseEntity.ok(tripService.updateStatus(id, request, userId));
     }
 
     @PostMapping("/{id}/rate")
-    public ResponseEntity<TripResponse> rateTrip(
-        @PathVariable Long id,
-        @Valid @RequestBody RateRequest request,
-        @RequestHeader("X-User-Id") Long userId
-    ) {
+    public ResponseEntity<TripResponse> rateTrip(@PathVariable Long id, @Valid @RequestBody RateRequest request) {
+        Long userId = getCurrentUserId();
         return ResponseEntity.ok(tripService.rateTrip(id, request.rating(), userId));
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<StatsResponse> getStats(
-        @RequestParam("date") String date,
-        @RequestHeader("X-User-Id") Long userId
-    ) {
+    public ResponseEntity<StatsResponse> getStats(@RequestParam("date") String date) {
+        Long userId = getCurrentUserId();
         return ResponseEntity.ok(tripService.getStats(date, userId));
+    }
+
+    private Long getCurrentUserId() {
+        String name = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
+        return Long.parseLong(name);
     }
 }

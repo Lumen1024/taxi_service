@@ -12,8 +12,10 @@ import com.lumen1024.trip_service.repository.TripRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -39,7 +41,7 @@ public class TripService {
         var user = userServiceClient.getUser(userId);
 
         if (!"PASSENGER".equals(user.role())) {
-            throw new SecurityException("Only passengers can create trips");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only passengers can create trips");
         }
 
         userServiceClient.verifyPassenger(user.passengerId());
@@ -82,7 +84,7 @@ public class TripService {
     @Transactional(readOnly = true)
     public TripResponse getTrip(Long tripId, Long userId) {
         Trip trip = tripRepository.findById(tripId)
-            .orElseThrow(() -> new IllegalArgumentException("Trip not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Trip not found"));
 
         var user = userServiceClient.getUser(userId);
 
@@ -92,7 +94,7 @@ public class TripService {
             && trip.getDriverId() != null && trip.getDriverId().equals(user.driverId());
 
         if (!isPassenger && !isDriver) {
-            throw new SecurityException("Access denied");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Access denied");
         }
 
         return TripResponse.from(trip);
@@ -100,7 +102,7 @@ public class TripService {
 
     public TripResponse updateStatus(Long tripId, UpdateStatusRequest request, Long userId) {
         Trip trip = tripRepository.findById(tripId)
-            .orElseThrow(() -> new IllegalArgumentException("Trip not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Trip not found"));
 
         var user = userServiceClient.getUser(userId);
         TripStatus newStatus = request.status();
@@ -108,26 +110,26 @@ public class TripService {
         switch (newStatus) {
             case IN_PROGRESS -> {
                 if (!"DRIVER".equals(user.role())) {
-                    throw new SecurityException("Only driver can accept a trip");
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only driver can accept a trip");
                 }
                 if (!trip.getDriverId().equals(user.driverId())) {
-                    throw new SecurityException("You are not the driver of this trip");
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You are not the driver of this trip");
                 }
                 if (trip.getStatus() != TripStatus.WAITING_DRIVER) {
-                    throw new IllegalStateException("Trip must be in WAITING_DRIVER status");
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,"Trip must be in WAITING_DRIVER status");
                 }
                 trip.setStatus(TripStatus.IN_PROGRESS);
                 sendEvent(trip, "TRIP_STARTED", "Водитель начал поездку", trip.getPassengerId(), "PASSENGER");
             }
             case COMPLETED -> {
                 if (!"DRIVER".equals(user.role())) {
-                    throw new SecurityException("Only driver can complete a trip");
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only driver can complete a trip");
                 }
                 if (!trip.getDriverId().equals(user.driverId())) {
-                    throw new SecurityException("You are not the driver of this trip");
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You are not the driver of this trip");
                 }
                 if (trip.getStatus() != TripStatus.IN_PROGRESS) {
-                    throw new IllegalStateException("Trip must be in IN_PROGRESS status");
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,"Trip must be in IN_PROGRESS status");
                 }
                 trip.setStatus(TripStatus.COMPLETED);
                 userServiceClient.freeDriver(trip.getDriverId());
@@ -135,21 +137,21 @@ public class TripService {
             }
             case CANCELLED -> {
                 if (!"PASSENGER".equals(user.role())) {
-                    throw new SecurityException("Only passenger can cancel a trip");
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only passenger can cancel a trip");
                 }
                 if (!trip.getPassengerId().equals(user.passengerId())) {
-                    throw new SecurityException("You are not the passenger of this trip");
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You are not the passenger of this trip");
                 }
                 if (trip.getStatus() != TripStatus.WAITING_DRIVER
                     && trip.getStatus() != TripStatus.IN_PROGRESS) {
-                    throw new IllegalStateException("Trip cannot be cancelled in its current status");
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,"Trip cannot be cancelled in its current status");
                 }
                 trip.setStatus(TripStatus.CANCELLED);
                 userServiceClient.freeDriver(trip.getDriverId());
                 sendEvent(trip, "TRIP_CANCELLED", "Пассажир отменил поездку", trip.getDriverId(), "DRIVER");
             }
             case WAITING_DRIVER ->
-                throw new IllegalArgumentException("Cannot set status back to WAITING_DRIVER");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot set status back to WAITING_DRIVER");
         }
 
         trip = tripRepository.save(trip);
@@ -160,18 +162,18 @@ public class TripService {
         var user = userServiceClient.getUser(userId);
 
         if (!"PASSENGER".equals(user.role())) {
-            throw new SecurityException("Only passengers can rate trips");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only passengers can rate trips");
         }
 
         Trip trip = tripRepository.findByOwner(tripId, user.passengerId())
-            .orElseThrow(() -> new IllegalArgumentException("Trip not found or you are not the passenger"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Trip not found or you are not the passenger"));
 
         if (trip.getStatus() != TripStatus.COMPLETED) {
-            throw new IllegalStateException("Can only rate completed trips");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Can only rate completed trips");
         }
 
         if (trip.getRating() != null) {
-            throw new IllegalStateException("Trip already rated");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Trip already rated");
         }
 
         trip.setRating(rating);
@@ -184,7 +186,7 @@ public class TripService {
         var user = userServiceClient.getUser(userId);
 
         if (!"DRIVER".equals(user.role())) {
-            throw new SecurityException("Only drivers can view stats");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only drivers can view stats");
         }
 
         LocalDate date = LocalDate.parse(dateStr);
@@ -211,7 +213,7 @@ public class TripService {
     private double[] parseCoordinates(String coords) {
         String[] parts = coords.split(",");
         if (parts.length != 2) {
-            throw new IllegalArgumentException("Coordinates must be in 'lat,lon' format: " + coords);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Coordinates must be in 'lat,lon' format: " + coords);
         }
         return new double[]{Double.parseDouble(parts[0].trim()), Double.parseDouble(parts[1].trim())};
     }

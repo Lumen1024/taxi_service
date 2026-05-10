@@ -9,8 +9,10 @@ import com.lumen1024.user_service.repository.DriverRepository;
 import com.lumen1024.user_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ public class DriverService {
 
     public DriverResponse getDriver(Long id) {
         Driver driver = driverRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Driver not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Driver not found"));
         String email = userRepository.findByDriverId(driver.getId())
             .map(User::getEmail)
             .orElse(null);
@@ -34,7 +36,7 @@ public class DriverService {
     @Transactional
     public DriverResponse updateStatus(Long id, UpdateStatusRequest request) {
         Driver driver = driverRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Driver not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Driver not found"));
 
         DriverStatus oldStatus = driver.getStatus();
         driver.setStatus(request.status());
@@ -55,7 +57,7 @@ public class DriverService {
     @Transactional
     public DriverResponse acquireDriver() {
         Driver driver = driverRepository.acquireFreeDriver()
-            .orElseThrow(() -> new IllegalStateException("No free drivers available"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "No free drivers available"));
 
         driver.setStatus(DriverStatus.BUSY);
         driver = driverRepository.save(driver);

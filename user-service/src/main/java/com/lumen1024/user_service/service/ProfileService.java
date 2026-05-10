@@ -9,8 +9,10 @@ import com.lumen1024.user_service.repository.DriverRepository;
 import com.lumen1024.user_service.repository.PassengerRepository;
 import com.lumen1024.user_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +24,7 @@ public class ProfileService {
 
     public ProfileResponse getProfile(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         String name = null;
         String phone = null;
@@ -30,12 +32,12 @@ public class ProfileService {
 
         if (user.getPassengerId() != null) {
             Passenger p = passengerRepository.findById(user.getPassengerId())
-                .orElseThrow(() -> new IllegalStateException("Passenger profile not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Passenger profile not found"));
             name = p.getName();
             phone = p.getPhone();
         } else if (user.getDriverId() != null) {
             Driver d = driverRepository.findById(user.getDriverId())
-                .orElseThrow(() -> new IllegalStateException("Driver profile not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Driver profile not found"));
             name = d.getName();
             phone = d.getPhone();
             licenseNumber = d.getLicenseNumber();
@@ -51,17 +53,17 @@ public class ProfileService {
     @Transactional
     public ProfileResponse updateProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         if (user.getPassengerId() != null) {
             Passenger p = passengerRepository.findById(user.getPassengerId())
-                .orElseThrow(() -> new IllegalStateException("Passenger profile not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Passenger profile not found"));
             p.setName(request.name());
             p.setPhone(request.phone());
             passengerRepository.save(p);
         } else if (user.getDriverId() != null) {
             Driver d = driverRepository.findById(user.getDriverId())
-                .orElseThrow(() -> new IllegalStateException("Driver profile not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Driver profile not found"));
             d.setName(request.name());
             d.setPhone(request.phone());
             driverRepository.save(d);

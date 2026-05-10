@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -35,7 +36,7 @@ public class UserServiceClient {
         ).getBody();
 
         if (user == null) {
-            throw new IllegalArgumentException("User not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
 
         return new UserInfo(
@@ -65,7 +66,7 @@ public class UserServiceClient {
         ).getBody();
 
         if (driver == null || driver.get("id") == null) {
-            throw new IllegalStateException("No free drivers available");
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "No free drivers available");
         }
 
         return ((Number) driver.get("id")).longValue();
