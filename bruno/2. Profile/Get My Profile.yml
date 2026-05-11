@@ -8,7 +8,7 @@ http:
   url: "{{base_url}}/profile"
   headers:
     - name: Authorization
-      value: Bearer {{passenger_token}}
+      value: Bearer {{auth_token}}
   auth: inherit
 
 settings:

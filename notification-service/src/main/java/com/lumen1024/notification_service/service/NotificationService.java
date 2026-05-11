@@ -2,7 +2,7 @@ package com.lumen1024.notification_service.service;
 
 import com.lumen1024.common.dto.TripEvent;
 import com.lumen1024.notification_service.dto.NotificationResponse;
-import com.lumen1024.notification_service.entity.NotificationTask;
+import com.lumen1024.notification_service.entity.Notification;
 import com.lumen1024.notification_service.entity.NotificationType;
 import com.lumen1024.notification_service.repository.NotificationTaskRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +42,7 @@ public class NotificationService {
         log.info("Received trip event: tripId={}, type={}, recipientId={}",
             event.tripId(), type, event.recipientId());
 
-        NotificationTask task = NotificationTask.builder()
+        Notification task = Notification.builder()
             .tripId(event.tripId())
             .recipientId(event.recipientId())
             .type(type)
@@ -61,7 +61,7 @@ public class NotificationService {
 
     @Transactional
     public NotificationResponse markAsRead(Long notificationId, Long userId) {
-        NotificationTask task = notificationTaskRepository.findById(notificationId)
+        Notification task = notificationTaskRepository.findById(notificationId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification not found"));
 
         if (!task.getRecipientId().equals(userId)) {

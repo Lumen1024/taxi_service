@@ -54,6 +54,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_REDIS_HOST: redis
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_AMQP_DESERIALIZATION_TRUST_ALL: "true"
       USER_SERVICE_URL: http://user-service:8081
       SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
     depends_on:
@@ -72,6 +73,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_AMQP_DESERIALIZATION_TRUST_ALL: "true"
       SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
     depends_on:
       - postgres

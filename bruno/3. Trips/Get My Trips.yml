@@ -1,5 +1,5 @@
 info:
-  name: Get My Trips (Passenger)
+  name: Get My Trips
   type: http
   seq: 2
 
@@ -8,7 +8,7 @@ http:
   url: "{{base_url}}/trips"
   headers:
     - name: Authorization
-      value: Bearer {{passenger_token}}
+      value: Bearer {{auth_token}}
   auth: inherit
 
 settings:

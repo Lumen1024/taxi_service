@@ -8,18 +8,22 @@ http:
   url: "{{base_url}}/trips"
   headers:
     - name: Authorization
-      value: Bearer {{passenger_token}}
+      value: Bearer {{auth_token}}
     - name: Content-Type
       value: application/json
   body:
     type: json
-    data: '{"origin": "55.0302,82.9204", "destination": "55.0415,82.9346"}'
+    data: |-
+      {
+        "origin": "55.0302,82.8204",
+        "destination": "55.0415,82.9346"
+      }
   auth: inherit
 
 runtime:
   scripts:
     - type: after-response
-      code: |
+      code: |-
         if (res.getStatus() === 201) {
             var json = res.getBody();
             bru.setVar("trip_id", json.id);

@@ -66,6 +66,9 @@ public class ProfileService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Driver profile not found"));
             d.setName(request.name());
             d.setPhone(request.phone());
+            if (request.licenseNumber() != null) {
+                d.setLicenseNumber(request.licenseNumber());
+            }
             driverRepository.save(d);
         }
 

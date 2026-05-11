@@ -8,7 +8,7 @@ http:
   url: "{{base_url}}/notifications"
   headers:
     - name: Authorization
-      value: Bearer {{driver_token}}
+      value: Bearer {{auth_token}}
   auth: inherit
 
 runtime:

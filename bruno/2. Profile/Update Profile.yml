@@ -8,12 +8,17 @@ http:
   url: "{{base_url}}/profile"
   headers:
     - name: Authorization
-      value: Bearer {{passenger_token}}
+      value: Bearer {{auth_token}}
     - name: Content-Type
       value: application/json
   body:
     type: json
-    data: '{"name": "Ivan Updated", "phone": "+79000000099"}'
+    data: |-
+      {
+        "name": "Ivan Updated",
+        "phone": "+79000000099",
+        "licenseNumber": "12311123"
+      }
   auth: inherit
 
 settings:

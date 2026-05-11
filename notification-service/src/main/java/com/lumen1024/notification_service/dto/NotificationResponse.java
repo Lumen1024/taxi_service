@@ -1,7 +1,7 @@
 package com.lumen1024.notification_service.dto;
 
 import com.lumen1024.notification_service.entity.NotificationType;
-import com.lumen1024.notification_service.entity.NotificationTask;
+import com.lumen1024.notification_service.entity.Notification;
 import java.time.Instant;
 
 public record NotificationResponse(
@@ -12,7 +12,7 @@ public record NotificationResponse(
     boolean read,
     Instant sentAt
 ) {
-    public static NotificationResponse from(NotificationTask task) {
+    public static NotificationResponse from(Notification task) {
         return new NotificationResponse(
             task.getId(),
             task.getTripId(),

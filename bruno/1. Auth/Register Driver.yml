@@ -28,7 +28,7 @@ runtime:
       code: |
         if (res.getStatus() >= 200 && res.getStatus() < 300) {
             var json = res.getBody();
-            bru.setVar("driver_token", json.token);
+            bru.setVar("auth_token", json.token);
             console.log('Driver registered: userId=' + json.userId);
         } else if (res.getStatus() === 409) {
             console.log('Driver already exists, use Login Driver');

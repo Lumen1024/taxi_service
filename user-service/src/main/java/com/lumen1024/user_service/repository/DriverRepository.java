@@ -13,6 +13,6 @@ import java.util.Optional;
 public interface DriverRepository extends JpaRepository<Driver, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT d FROM Driver d WHERE d.status = 'FREE' ORDER BY d.id LIMIT 1")
+    @Query("SELECT d FROM Driver d WHERE d.status = 'FREE' ORDER BY d.createdAt DESC LIMIT 1")
     Optional<Driver> acquireFreeDriver();
 }

@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS trips (
     id BIGSERIAL PRIMARY KEY,
     passenger_id BIGINT NOT NULL,
     driver_id BIGINT,
-    status VARCHAR(20) NOT NULL DEFAULT 'WAITING_DRIVER',
+    status VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS',
     origin VARCHAR(255) NOT NULL,
     destination VARCHAR(255) NOT NULL,
     price DECIMAL(10, 2),

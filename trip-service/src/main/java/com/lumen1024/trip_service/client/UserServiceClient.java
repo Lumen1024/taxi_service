@@ -66,7 +66,9 @@ public class UserServiceClient {
         }
     }
 
-    public Long acquireDriver() {
+    public record AcquiredDriver(Long driverId, Long userId) {}
+
+    public AcquiredDriver acquireDriver() {
         Map body;
         try {
             body = restTemplate.exchange(
@@ -83,7 +85,39 @@ public class UserServiceClient {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "No free drivers available");
         }
 
-        return ((Number) body.get("id")).longValue();
+        Long driverId = ((Number) body.get("id")).longValue();
+        Long driverUserId = body.get("userId") != null ? ((Number) body.get("userId")).longValue() : null;
+        return new AcquiredDriver(driverId, driverUserId);
+    }
+
+    public Long getUserIdByPassengerId(Long passengerId) {
+        try {
+            var user = restTemplate.exchange(
+                baseUrl + "/users/by-passenger/{id}",
+                HttpMethod.GET,
+                new HttpEntity<>(authHeaders()),
+                Map.class,
+                passengerId
+            ).getBody();
+            return user != null ? ((Number) user.get("id")).longValue() : null;
+        } catch (HttpStatusCodeException e) {
+            throw new ResponseStatusException(e.getStatusCode(), "User service error: " + e.getResponseBodyAsString());
+        }
+    }
+
+    public Long getUserIdByDriverId(Long driverId) {
+        try {
+            var user = restTemplate.exchange(
+                baseUrl + "/users/by-driver/{id}",
+                HttpMethod.GET,
+                new HttpEntity<>(authHeaders()),
+                Map.class,
+                driverId
+            ).getBody();
+            return user != null ? ((Number) user.get("id")).longValue() : null;
+        } catch (HttpStatusCodeException e) {
+            throw new ResponseStatusException(e.getStatusCode(), "User service error: " + e.getResponseBodyAsString());
+        }
     }
 
     public void freeDriver(Long driverId) {

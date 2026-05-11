@@ -1,14 +1,14 @@
 info:
   name: Rate Trip
   type: http
-  seq: 8
+  seq: 7
 
 http:
   method: POST
   url: "{{base_url}}/trips/{{trip_id}}/rate"
   headers:
     - name: Authorization
-      value: Bearer {{passenger_token}}
+      value: Bearer {{auth_token}}
     - name: Content-Type
       value: application/json
   body:

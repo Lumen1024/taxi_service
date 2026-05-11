@@ -58,7 +58,7 @@ public class Trip {
         createdAt = Instant.now();
         updatedAt = createdAt;
         if (status == null) {
-            status = TripStatus.WAITING_DRIVER;
+            status = TripStatus.IN_PROGRESS;
         }
     }
 

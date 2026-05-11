@@ -7,9 +7,7 @@ request:
   variables:
     - name: base_url
       value: http://localhost:8080
-    - name: passenger_token
-      value: ""
-    - name: driver_token
+    - name: auth_token
       value: ""
     - name: trip_id
       value: ""

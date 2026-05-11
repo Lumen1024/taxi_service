@@ -10,6 +10,7 @@ import com.lumen1024.trip_service.entity.Trip;
 import com.lumen1024.trip_service.entity.TripStatus;
 import com.lumen1024.trip_service.repository.TripRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -46,21 +48,22 @@ public class TripService {
 
         userServiceClient.verifyPassenger(user.passengerId());
 
-        Long driverId = userServiceClient.acquireDriver();
+        var acquired = userServiceClient.acquireDriver();
         BigDecimal price = calculatePrice(origin, destination);
 
         Trip trip = Trip.builder()
             .passengerId(user.passengerId())
-            .driverId(driverId)
+            .driverId(acquired.driverId())
             .origin(origin)
             .destination(destination)
             .price(price)
-            .status(TripStatus.WAITING_DRIVER)
+            .status(TripStatus.IN_PROGRESS)
             .build();
 
         trip = tripRepository.save(trip);
 
-        sendEvent(trip, "TRIP_CREATED", "Новая поездка назначена вам", driverId, "DRIVER");
+        sendEvent(trip, "TRIP_STARTED", "Водитель начал поездку", userId, "PASSENGER");
+        sendEvent(trip, "TRIP_CREATED", "Новая поездка назначена вам", acquired.userId(), "DRIVER");
 
         return TripResponse.from(trip);
     }
@@ -108,19 +111,6 @@ public class TripService {
         TripStatus newStatus = request.status();
 
         switch (newStatus) {
-            case IN_PROGRESS -> {
-                if (!"DRIVER".equals(user.role())) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only driver can accept a trip");
-                }
-                if (!trip.getDriverId().equals(user.driverId())) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You are not the driver of this trip");
-                }
-                if (trip.getStatus() != TripStatus.WAITING_DRIVER) {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT,"Trip must be in WAITING_DRIVER status");
-                }
-                trip.setStatus(TripStatus.IN_PROGRESS);
-                sendEvent(trip, "TRIP_STARTED", "Водитель начал поездку", trip.getPassengerId(), "PASSENGER");
-            }
             case COMPLETED -> {
                 if (!"DRIVER".equals(user.role())) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Only driver can complete a trip");
@@ -133,7 +123,7 @@ public class TripService {
                 }
                 trip.setStatus(TripStatus.COMPLETED);
                 userServiceClient.freeDriver(trip.getDriverId());
-                sendEvent(trip, "TRIP_COMPLETED", "Поездка завершена", trip.getPassengerId(), "PASSENGER");
+                sendEvent(trip, "TRIP_COMPLETED", "Поездка завершена", userServiceClient.getUserIdByPassengerId(trip.getPassengerId()), "PASSENGER");
             }
             case CANCELLED -> {
                 if (!"PASSENGER".equals(user.role())) {
@@ -142,16 +132,13 @@ public class TripService {
                 if (!trip.getPassengerId().equals(user.passengerId())) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You are not the passenger of this trip");
                 }
-                if (trip.getStatus() != TripStatus.WAITING_DRIVER
-                    && trip.getStatus() != TripStatus.IN_PROGRESS) {
+                if (trip.getStatus() != TripStatus.IN_PROGRESS) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT,"Trip cannot be cancelled in its current status");
                 }
                 trip.setStatus(TripStatus.CANCELLED);
                 userServiceClient.freeDriver(trip.getDriverId());
-                sendEvent(trip, "TRIP_CANCELLED", "Пассажир отменил поездку", trip.getDriverId(), "DRIVER");
+                sendEvent(trip, "TRIP_CANCELLED", "Пассажир отменил поездку", userServiceClient.getUserIdByDriverId(trip.getDriverId()), "DRIVER");
             }
-            case WAITING_DRIVER ->
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot set status back to WAITING_DRIVER");
         }
 
         trip = tripRepository.save(trip);
@@ -232,8 +219,9 @@ public class TripService {
                 message, recipientId, recipientType
             );
             rabbitTemplate.convertAndSend("trip.exchange", "trip.event", tripEvent);
+            log.info("Event sent: tripId={}, event={}, recipientId={}", trip.getId(), event, recipientId);
         } catch (Exception e) {
-            // best-effort
+            log.error("Failed to send event: tripId={}, event={}: {}", trip.getId(), event, e.getMessage());
         }
     }
 

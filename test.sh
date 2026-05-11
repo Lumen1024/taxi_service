@@ -66,18 +66,8 @@ if [ -z "$TRIP_ID" ]; then
     exit 1
 fi
 
-# 4. Driver accepts trip
-echo "--- 4. Driver accepts trip (IN_PROGRESS) ---"
-RESP=$(curl -s -w '\n%{http_code}' -X PATCH "$BASE/trips/$TRIP_ID/status" \
-  -H "Authorization: Bearer $D_TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d '{"status":"IN_PROGRESS"}')
-BODY=$(echo "$RESP" | sed '$d')
-CODE=$(echo "$RESP" | tail -1)
-check "Accept trip" "$CODE" "$BODY"
-
-# 5. Driver completes trip
-echo "--- 5. Driver completes trip (COMPLETED) ---"
+# 4. Driver completes trip
+echo "--- 4. Driver completes trip (COMPLETED) ---"
 RESP=$(curl -s -w '\n%{http_code}' -X PATCH "$BASE/trips/$TRIP_ID/status" \
   -H "Authorization: Bearer $D_TOKEN" \
   -H 'Content-Type: application/json' \
@@ -86,8 +76,8 @@ BODY=$(echo "$RESP" | sed '$d')
 CODE=$(echo "$RESP" | tail -1)
 check "Complete trip" "$CODE" "$BODY"
 
-# 6. Passenger rates trip
-echo "--- 6. Passenger rates trip ---"
+# 5. Passenger rates trip
+echo "--- 5. Passenger rates trip ---"
 RESP=$(curl -s -w '\n%{http_code}' -X POST "$BASE/trips/$TRIP_ID/rate" \
   -H "Authorization: Bearer $P_TOKEN" \
   -H 'Content-Type: application/json' \
@@ -96,24 +86,24 @@ BODY=$(echo "$RESP" | sed '$d')
 CODE=$(echo "$RESP" | tail -1)
 check "Rate trip" "$CODE" "$BODY"
 
-# 7. Trip history
-echo "--- 7. Trip history ---"
+# 6. Trip history
+echo "--- 6. Trip history ---"
 RESP=$(curl -s -w '\n%{http_code}' "$BASE/trips" \
   -H "Authorization: Bearer $P_TOKEN")
 BODY=$(echo "$RESP" | sed '$d')
 CODE=$(echo "$RESP" | tail -1)
 check "Trip history" "$CODE" "$BODY"
 
-# 8. Driver stats
-echo "--- 8. Driver stats ---"
+# 7. Driver stats
+echo "--- 7. Driver stats ---"
 RESP=$(curl -s -w '\n%{http_code}' "$BASE/trips/stats?date=2026-05-11" \
   -H "Authorization: Bearer $D_TOKEN")
 BODY=$(echo "$RESP" | sed '$d')
 CODE=$(echo "$RESP" | tail -1)
 check "Driver stats" "$CODE" "$BODY"
 
-# 9. Notifications
-echo "--- 9. Notifications ---"
+# 8. Notifications
+echo "--- 8. Notifications ---"
 RESP=$(curl -s -w '\n%{http_code}' "$BASE/notifications" \
   -H "Authorization: Bearer $D_TOKEN")
 BODY=$(echo "$RESP" | sed '$d')
