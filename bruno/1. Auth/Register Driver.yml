@@ -1,0 +1,41 @@
+info:
+  name: Register Driver
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{base_url}}/register"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "email": "driver@test.com",
+        "password": "pass123",
+        "role": "DRIVER",
+        "name": "Petr",
+        "phone": "+79000000002",
+        "licenseNumber": "LIC123456"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        if (res.getStatus() >= 200 && res.getStatus() < 300) {
+            var json = res.getBody();
+            bru.setVar("driver_token", json.token);
+            console.log('Driver registered: userId=' + json.userId);
+        } else if (res.getStatus() === 409) {
+            console.log('Driver already exists, use Login Driver');
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

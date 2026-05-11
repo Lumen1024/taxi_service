@@ -2,8 +2,8 @@ package com.lumen1024.notification_service.service;
 
 import com.lumen1024.common.dto.TripEvent;
 import com.lumen1024.notification_service.dto.NotificationResponse;
-import com.lumen1024.notification_service.entity.NotificationStatus;
 import com.lumen1024.notification_service.entity.NotificationTask;
+import com.lumen1024.notification_service.entity.NotificationType;
 import com.lumen1024.notification_service.repository.NotificationTaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,35 +14,46 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
 
+    private static final Map<String, NotificationType> EVENT_TYPE_MAP = Map.of(
+        "TRIP_CREATED", NotificationType.TRIP_ASSIGNED,
+        "TRIP_STARTED", NotificationType.TRIP_STARTED,
+        "TRIP_COMPLETED", NotificationType.TRIP_COMPLETED,
+        "TRIP_CANCELLED", NotificationType.TRIP_CANCELLED
+    );
+
     private final NotificationTaskRepository notificationTaskRepository;
 
     @RabbitListener(queues = "trip.events")
     @Transactional
     public void onTripEvent(TripEvent event) {
-        log.info("Received trip event: tripId={}, event={}, recipientId={}",
-            event.tripId(), event.event(), event.recipientId());
+        NotificationType type = EVENT_TYPE_MAP.getOrDefault(event.event(), null);
+        if (type == null) {
+            log.warn("Unknown trip event type: {}", event.event());
+            return;
+        }
+
+        log.info("Received trip event: tripId={}, type={}, recipientId={}",
+            event.tripId(), type, event.recipientId());
 
         NotificationTask task = NotificationTask.builder()
             .tripId(event.tripId())
-            .recipientType(event.recipientType())
             .recipientId(event.recipientId())
-            .message(event.message())
-            .status(NotificationStatus.PENDING)
+            .type(type)
             .build();
 
         notificationTaskRepository.save(task);
-        log.info("Notification task created: id={}", task.getId());
     }
 
     @Transactional(readOnly = true)
     public List<NotificationResponse> getUserNotifications(Long userId) {
-        return notificationTaskRepository.findByRecipientIdOrderByCreatedAtDesc(userId)
+        return notificationTaskRepository.findByRecipientIdOrderBySentAtDesc(userId)
             .stream()
             .map(NotificationResponse::from)
             .toList();

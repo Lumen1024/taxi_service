@@ -1,0 +1,33 @@
+info:
+  name: Create Trip
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{base_url}}/trips"
+  headers:
+    - name: Authorization
+      value: Bearer {{passenger_token}}
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: '{"origin": "55.0302,82.9204", "destination": "55.0415,82.9346"}'
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        if (res.getStatus() === 201) {
+            var json = res.getBody();
+            bru.setVar("trip_id", json.id);
+            console.log('Trip created: id=' + json.id + ', price=' + json.price);
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

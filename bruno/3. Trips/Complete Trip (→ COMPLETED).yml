@@ -1,0 +1,23 @@
+info:
+  name: Complete Trip (→ COMPLETED)
+  type: http
+  seq: 6
+
+http:
+  method: PATCH
+  url: "{{base_url}}/trips/{{trip_id}}/status"
+  headers:
+    - name: Authorization
+      value: Bearer {{driver_token}}
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: '{"status": "COMPLETED"}'
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

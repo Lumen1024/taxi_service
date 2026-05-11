@@ -1,0 +1,11 @@
+info:
+  name: 4. Notifications
+  type: folder
+  seq: 4
+
+request:
+  auth: inherit
+
+docs:
+  content: "Уведомления о событиях поездки. Поля: id, tripId, recipientId, type (TRIP_ASSIGNED/TRIP_STARTED/TRIP_COMPLETED/TRIP_CANCELLED), read, sentAt."
+  type: text/markdown

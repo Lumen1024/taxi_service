@@ -4,6 +4,7 @@ import com.lumen1024.common.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -27,59 +28,76 @@ public class UserServiceClient {
     }
 
     public UserInfo getUser(Long userId) {
-        var user = restTemplate.exchange(
-            baseUrl + "/users/{id}",
-            HttpMethod.GET,
-            new HttpEntity<>(authHeaders()),
-            Map.class,
-            userId
-        ).getBody();
+        try {
+            var user = restTemplate.exchange(
+                baseUrl + "/users/{id}",
+                HttpMethod.GET,
+                new HttpEntity<>(authHeaders()),
+                Map.class,
+                userId
+            ).getBody();
 
-        if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+            if (user == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+            }
+
+            return new UserInfo(
+                userId,
+                (String) user.get("role"),
+                user.get("passengerId") != null ? ((Number) user.get("passengerId")).longValue() : null,
+                user.get("driverId") != null ? ((Number) user.get("driverId")).longValue() : null
+            );
+        } catch (HttpStatusCodeException e) {
+            throw new ResponseStatusException(e.getStatusCode(), "User service error: " + e.getResponseBodyAsString());
         }
-
-        return new UserInfo(
-            userId,
-            (String) user.get("role"),
-            user.get("passengerId") != null ? ((Number) user.get("passengerId")).longValue() : null,
-            user.get("driverId") != null ? ((Number) user.get("driverId")).longValue() : null
-        );
     }
 
     public void verifyPassenger(Long passengerId) {
-        restTemplate.exchange(
-            baseUrl + "/passengers/{id}",
-            HttpMethod.GET,
-            new HttpEntity<>(authHeaders()),
-            Object.class,
-            passengerId
-        );
+        try {
+            restTemplate.exchange(
+                baseUrl + "/passengers/{id}",
+                HttpMethod.GET,
+                new HttpEntity<>(authHeaders()),
+                Object.class,
+                passengerId
+            );
+        } catch (HttpStatusCodeException e) {
+            throw new ResponseStatusException(e.getStatusCode(), "User service error: " + e.getResponseBodyAsString());
+        }
     }
 
     public Long acquireDriver() {
-        var driver = restTemplate.exchange(
-            baseUrl + "/drivers/acquire",
-            HttpMethod.POST,
-            new HttpEntity<>(authHeaders()),
-            Map.class
-        ).getBody();
+        Map body;
+        try {
+            body = restTemplate.exchange(
+                baseUrl + "/drivers/acquire",
+                HttpMethod.POST,
+                new HttpEntity<>(authHeaders()),
+                Map.class
+            ).getBody();
+        } catch (HttpStatusCodeException e) {
+            throw new ResponseStatusException(e.getStatusCode(), "User service error: " + e.getResponseBodyAsString());
+        }
 
-        if (driver == null || driver.get("id") == null) {
+        if (body == null || body.get("id") == null) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "No free drivers available");
         }
 
-        return ((Number) driver.get("id")).longValue();
+        return ((Number) body.get("id")).longValue();
     }
 
     public void freeDriver(Long driverId) {
-        restTemplate.exchange(
-            baseUrl + "/drivers/{id}/status",
-            HttpMethod.PATCH,
-            new HttpEntity<>(Map.of("status", "FREE"), authHeaders()),
-            Object.class,
-            driverId
-        );
+        try {
+            restTemplate.exchange(
+                baseUrl + "/drivers/{id}/status",
+                HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("status", "FREE"), authHeaders()),
+                Object.class,
+                driverId
+            );
+        } catch (HttpStatusCodeException e) {
+            throw new ResponseStatusException(e.getStatusCode(), "User service error: " + e.getResponseBodyAsString());
+        }
     }
 
     private HttpHeaders authHeaders() {

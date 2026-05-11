@@ -1,0 +1,32 @@
+info:
+  name: Get Notifications
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{base_url}}/notifications"
+  headers:
+    - name: Authorization
+      value: Bearer {{driver_token}}
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        if (res.getStatus() === 200) {
+            var list = res.getBody();
+            if (list.length > 0) {
+                bru.setVar("notification_id", list[0].id);
+                console.log('Notifications count: ' + list.length + ', first id=' + list[0].id + ', type=' + list[0].type);
+            } else {
+                console.log('No notifications yet');
+            }
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

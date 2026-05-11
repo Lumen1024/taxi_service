@@ -1,0 +1,23 @@
+info:
+  name: Cancel Trip (→ CANCELLED)
+  type: http
+  seq: 7
+
+http:
+  method: PATCH
+  url: "{{base_url}}/trips/{{trip_id}}/status"
+  headers:
+    - name: Authorization
+      value: Bearer {{passenger_token}}
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: '{"status": "CANCELLED"}'
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

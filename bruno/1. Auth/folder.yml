@@ -1,0 +1,11 @@
+info:
+  name: 1. Auth
+  type: folder
+  seq: 1
+
+request:
+  auth: inherit
+
+docs:
+  content: Регистрация и вход. После регистрации токен сохраняется автоматически. При повторном запуске регистрации с теми же данными используй Login.
+  type: text/markdown

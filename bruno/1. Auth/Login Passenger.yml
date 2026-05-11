@@ -1,0 +1,35 @@
+info:
+  name: Login Passenger
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{base_url}}/login"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "email": "passenger@test.com",
+        "password": "pass123"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        if (res.getStatus() === 200) {
+            var json = res.getBody();
+            bru.setVar("passenger_token", json.token);
+            console.log('Passenger logged in: userId=' + json.userId);
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

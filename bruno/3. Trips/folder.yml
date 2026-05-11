@@ -1,0 +1,11 @@
+info:
+  name: 3. Trips
+  type: folder
+  seq: 3
+
+request:
+  auth: inherit
+
+docs:
+  content: "Жизненный цикл поездки: создать (201) → принять (200) → завершить (200) → оценить (200)."
+  type: text/markdown

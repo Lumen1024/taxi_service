@@ -1,0 +1,27 @@
+opencollection: 1.0.0
+
+info:
+  name: Taxi Service
+
+request:
+  variables:
+    - name: base_url
+      value: http://localhost:8080
+    - name: passenger_token
+      value: ""
+    - name: driver_token
+      value: ""
+    - name: trip_id
+      value: ""
+    - name: notification_id
+      value: ""
+
+docs:
+  content: "API для сервиса такси. Порядок: регистрация пассажира → регистрация водителя → создание поездки → принятие → завершение → оценка → уведомления."
+  type: text/markdown
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+      - .git

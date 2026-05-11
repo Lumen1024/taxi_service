@@ -1,0 +1,18 @@
+info:
+  name: Mark as Read
+  type: http
+  seq: 2
+
+http:
+  method: PATCH
+  url: "{{base_url}}/notifications/{{notification_id}}"
+  headers:
+    - name: Authorization
+      value: Bearer {{driver_token}}
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

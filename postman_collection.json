@@ -1,402 +1,337 @@
 {
-	"info": {
-		"name": "Taxi Service",
-		"description": "API для сервиса такси. Порядок запуска: регистрация пассажира → регистрация водителя → создание поездки → принятие → завершение → оценка → уведомления.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"variable": [
-		{ "key": "base_url", "value": "http://localhost:8080" },
-		{ "key": "passenger_token", "value": "" },
-		{ "key": "driver_token", "value": "" },
-		{ "key": "trip_id", "value": "" },
-		{ "key": "notification_id", "value": "" }
-	],
-	"item": [
-		{
-			"name": "1. Auth",
-			"description": "Регистрация и вход. Запускай регистрацию один раз — при повторном запуске отработает автологин.",
-			"item": [
-				{
-					"name": "Register Passenger",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    var json = pm.response.json();",
-									"    pm.collectionVariables.set('passenger_token', json.token);",
-									"    console.log('Passenger registered: userId=' + json.userId);",
-									"} else if (pm.response.code === 409) {",
-									"    console.log('Passenger already exists, token from login kept');",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [{ "key": "Content-Type", "value": "application/json" }],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"email\": \"passenger@test.com\", \"password\": \"pass123\", \"role\": \"PASSENGER\", \"name\": \"Иван\", \"phone\": \"+79000000001\"}"
-						},
-						"url": { "raw": "{{base_url}}/register", "host": ["{{base_url}}"], "path": ["register"] }
-					}
-				},
-				{
-					"name": "Login Passenger",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    var json = pm.response.json();",
-									"    pm.collectionVariables.set('passenger_token', json.token);",
-									"    console.log('Passenger logged in: userId=' + json.userId);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [{ "key": "Content-Type", "value": "application/json" }],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"email\": \"passenger@test.com\", \"password\": \"pass123\"}"
-						},
-						"url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
-					}
-				},
-				{
-					"name": "Register Driver",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    var json = pm.response.json();",
-									"    pm.collectionVariables.set('driver_token', json.token);",
-									"    console.log('Driver registered: userId=' + json.userId);",
-									"} else if (pm.response.code === 409) {",
-									"    console.log('Driver already exists, token from login kept');",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [{ "key": "Content-Type", "value": "application/json" }],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"email\": \"driver@test.com\", \"password\": \"pass123\", \"role\": \"DRIVER\", \"name\": \"Пётр\", \"phone\": \"+79000000002\", \"licenseNumber\": \"LIC123456\"}"
-						},
-						"url": { "raw": "{{base_url}}/register", "host": ["{{base_url}}"], "path": ["register"] }
-					}
-				},
-				{
-					"name": "Login Driver",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    var json = pm.response.json();",
-									"    pm.collectionVariables.set('driver_token', json.token);",
-									"    console.log('Driver logged in: userId=' + json.userId);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [{ "key": "Content-Type", "value": "application/json" }],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"email\": \"driver@test.com\", \"password\": \"pass123\"}"
-						},
-						"url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
-					}
-				}
-			]
-		},
-		{
-			"name": "2. Profile",
-			"description": "Профиль текущего пользователя.",
-			"item": [
-				{
-					"name": "Get My Profile",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    console.log('Profile loaded');",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [{ "key": "Authorization", "value": "Bearer {{passenger_token}}" }],
-						"url": { "raw": "{{base_url}}/profile", "host": ["{{base_url}}"], "path": ["profile"] }
-					}
-				},
-				{
-					"name": "Update Profile",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{passenger_token}}" },
-							{ "key": "Content-Type", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"name\": \"Иван Обновлённый\", \"phone\": \"+79000000099\"}"
-						},
-						"url": { "raw": "{{base_url}}/profile", "host": ["{{base_url}}"], "path": ["profile"] }
-					}
-				}
-			]
-		},
-		{
-			"name": "3. Trips",
-			"description": "Жизненный цикл поездки: создать → принять → завершить → оценить.",
-			"item": [
-				{
-					"name": "Create Trip",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    var json = pm.response.json();",
-									"    pm.collectionVariables.set('trip_id', json.id);",
-									"    console.log('Trip created: id=' + json.id + ', price=' + json.price);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{passenger_token}}" },
-							{ "key": "Content-Type", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"origin\": \"55.0302,82.9204\", \"destination\": \"55.0415,82.9346\"}"
-						},
-						"url": { "raw": "{{base_url}}/trips", "host": ["{{base_url}}"], "path": ["trips"] }
-					}
-				},
-				{
-					"name": "Get My Trips (Passenger)",
-					"request": {
-						"method": "GET",
-						"header": [{ "key": "Authorization", "value": "Bearer {{passenger_token}}" }],
-						"url": { "raw": "{{base_url}}/trips", "host": ["{{base_url}}"], "path": ["trips"] }
-					}
-				},
-				{
-					"name": "Get My Trips (Driver)",
-					"request": {
-						"method": "GET",
-						"header": [{ "key": "Authorization", "value": "Bearer {{driver_token}}" }],
-						"url": { "raw": "{{base_url}}/trips", "host": ["{{base_url}}"], "path": ["trips"] }
-					}
-				},
-				{
-					"name": "Get Trip by ID",
-					"request": {
-						"method": "GET",
-						"header": [{ "key": "Authorization", "value": "Bearer {{passenger_token}}" }],
-						"url": { "raw": "{{base_url}}/trips/{{trip_id}}", "host": ["{{base_url}}"], "path": ["trips", "{{trip_id}}"] }
-					}
-				},
-				{
-					"name": "Accept Trip (→ IN_PROGRESS)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    console.log('Trip accepted, driver assigned');",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{driver_token}}" },
-							{ "key": "Content-Type", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"status\": \"IN_PROGRESS\"}"
-						},
-						"url": { "raw": "{{base_url}}/trips/{{trip_id}}/status", "host": ["{{base_url}}"], "path": ["trips", "{{trip_id}}", "status"] }
-					}
-				},
-				{
-					"name": "Complete Trip (→ COMPLETED)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    console.log('Trip completed');",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{driver_token}}" },
-							{ "key": "Content-Type", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"status\": \"COMPLETED\"}"
-						},
-						"url": { "raw": "{{base_url}}/trips/{{trip_id}}/status", "host": ["{{base_url}}"], "path": ["trips", "{{trip_id}}", "status"] }
-					}
-				},
-				{
-					"name": "Cancel Trip (→ CANCELLED)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    console.log('Trip cancelled');",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{passenger_token}}" },
-							{ "key": "Content-Type", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"status\": \"CANCELLED\"}"
-						},
-						"url": { "raw": "{{base_url}}/trips/{{trip_id}}/status", "host": ["{{base_url}}"], "path": ["trips", "{{trip_id}}", "status"] }
-					}
-				},
-				{
-					"name": "Rate Trip",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    console.log('Trip rated');",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{passenger_token}}" },
-							{ "key": "Content-Type", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"rating\": 5}"
-						},
-						"url": { "raw": "{{base_url}}/trips/{{trip_id}}/rate", "host": ["{{base_url}}"], "path": ["trips", "{{trip_id}}", "rate"] }
-					}
-				},
-				{
-					"name": "Driver Stats",
-					"request": {
-						"method": "GET",
-						"header": [{ "key": "Authorization", "value": "Bearer {{driver_token}}" }],
-						"url": {
-							"raw": "{{base_url}}/trips/stats?date=2026-05-11",
-							"host": ["{{base_url}}"],
-							"path": ["trips", "stats"],
-							"query": [{ "key": "date", "value": "2026-05-11" }]
-						}
-					}
-				}
-			]
-		},
-		{
-			"name": "4. Notifications",
-			"description": "Уведомления для водителя (появляются после завершения поездки).",
-			"item": [
-				{
-					"name": "Get Notifications",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    var list = pm.response.json();",
-									"    if (list.length > 0) {",
-									"        pm.collectionVariables.set('notification_id', list[0].id);",
-									"        console.log('Notifications count: ' + list.length + ', first id=' + list[0].id);",
-									"    } else {",
-									"        console.log('No notifications yet');",
-									"    }",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [{ "key": "Authorization", "value": "Bearer {{driver_token}}" }],
-						"url": { "raw": "{{base_url}}/notifications", "host": ["{{base_url}}"], "path": ["notifications"] }
-					}
-				},
-				{
-					"name": "Mark as Read",
-					"request": {
-						"method": "PATCH",
-						"header": [{ "key": "Authorization", "value": "Bearer {{driver_token}}" }],
-						"url": { "raw": "{{base_url}}/notifications/{{notification_id}}", "host": ["{{base_url}}"], "path": ["notifications", "{{notification_id}}"] }
-					}
-				}
-			]
-		}
-	]
+    "info": {
+        "name": "Taxi Service",
+        "description": "API для сервиса такси. Порядок: регистрация пассажира → регистрация водителя → создание поездки → принятие → завершение → оценка → уведомления.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        { "key": "base_url", "value": "http://localhost:8080" },
+        { "key": "passenger_token", "value": "" },
+        { "key": "driver_token", "value": "" },
+        { "key": "trip_id", "value": "" },
+        { "key": "notification_id", "value": "" }
+    ],
+    "item": [
+        {
+            "name": "1. Auth",
+            "description": "Регистрация и вход. После регистрации токен сохраняется автоматически. При повторном запуске регистрации с теми же данными используй Login.",
+            "item": [
+                {
+                    "name": "Register Passenger",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                                    "    var json = pm.response.json();",
+                                    "    pm.collectionVariables.set('passenger_token', json.token);",
+                                    "    console.log('Passenger registered: userId=' + json.userId);",
+                                    "} else if (pm.response.code === 409) {",
+                                    "    console.log('Passenger already exists, use Login Passenger');",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"email\": \"passenger@test.com\", \"password\": \"pass123\", \"role\": \"PASSENGER\", \"name\": \"Ivan\", \"phone\": \"+79000000001\"}"
+                        },
+                        "url": { "raw": "{{base_url}}/register", "host": ["{{base_url}}"], "path": ["register"] }
+                    }
+                },
+                {
+                    "name": "Login Passenger",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var json = pm.response.json();",
+                                    "    pm.collectionVariables.set('passenger_token', json.token);",
+                                    "    console.log('Passenger logged in: userId=' + json.userId);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"email\": \"passenger@test.com\", \"password\": \"pass123\"}"
+                        },
+                        "url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
+                    }
+                },
+                {
+                    "name": "Register Driver",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                                    "    var json = pm.response.json();",
+                                    "    pm.collectionVariables.set('driver_token', json.token);",
+                                    "    console.log('Driver registered: userId=' + json.userId);",
+                                    "} else if (pm.response.code === 409) {",
+                                    "    console.log('Driver already exists, use Login Driver');",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"email\": \"driver@test.com\", \"password\": \"pass123\", \"role\": \"DRIVER\", \"name\": \"Petr\", \"phone\": \"+79000000002\", \"licenseNumber\": \"LIC123456\"}"
+                        },
+                        "url": { "raw": "{{base_url}}/register", "host": ["{{base_url}}"], "path": ["register"] }
+                    }
+                },
+                {
+                    "name": "Login Driver",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var json = pm.response.json();",
+                                    "    pm.collectionVariables.set('driver_token', json.token);",
+                                    "    console.log('Driver logged in: userId=' + json.userId);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"email\": \"driver@test.com\", \"password\": \"pass123\"}"
+                        },
+                        "url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Profile",
+            "description": "Профиль текущего пользователя.",
+            "item": [
+                {
+                    "name": "Get My Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [{ "key": "Authorization", "value": "Bearer {{passenger_token}}" }],
+                        "url": { "raw": "{{base_url}}/profile", "host": ["{{base_url}}"], "path": ["profile"] }
+                    }
+                },
+                {
+                    "name": "Update Profile",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{passenger_token}}" },
+                            { "key": "Content-Type", "value": "application/json" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\": \"Ivan Updated\", \"phone\": \"+79000000099\"}"
+                        },
+                        "url": { "raw": "{{base_url}}/profile", "host": ["{{base_url}}"], "path": ["profile"] }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Trips",
+            "description": "Жизненный цикл поездки: создать (201) → принять (200) → завершить (200) → оценить (200).",
+            "item": [
+                {
+                    "name": "Create Trip",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    var json = pm.response.json();",
+                                    "    pm.collectionVariables.set('trip_id', json.id);",
+                                    "    console.log('Trip created: id=' + json.id + ', price=' + json.price);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{passenger_token}}" },
+                            { "key": "Content-Type", "value": "application/json" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"origin\": \"55.0302,82.9204\", \"destination\": \"55.0415,82.9346\"}"
+                        },
+                        "url": { "raw": "{{base_url}}/trips", "host": ["{{base_url}}"], "path": ["trips"] }
+                    }
+                },
+                {
+                    "name": "Get My Trips (Passenger)",
+                    "request": {
+                        "method": "GET",
+                        "header": [{ "key": "Authorization", "value": "Bearer {{passenger_token}}" }],
+                        "url": { "raw": "{{base_url}}/trips", "host": ["{{base_url}}"], "path": ["trips"] }
+                    }
+                },
+                {
+                    "name": "Get My Trips (Driver)",
+                    "request": {
+                        "method": "GET",
+                        "header": [{ "key": "Authorization", "value": "Bearer {{driver_token}}" }],
+                        "url": { "raw": "{{base_url}}/trips", "host": ["{{base_url}}"], "path": ["trips"] }
+                    }
+                },
+                {
+                    "name": "Get Trip by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [{ "key": "Authorization", "value": "Bearer {{passenger_token}}" }],
+                        "url": { "raw": "{{base_url}}/trips/{{trip_id}}", "host": ["{{base_url}}"], "path": ["trips", "{{trip_id}}"] }
+                    }
+                },
+                {
+                    "name": "Accept Trip (→ IN_PROGRESS)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{driver_token}}" },
+                            { "key": "Content-Type", "value": "application/json" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"status\": \"IN_PROGRESS\"}"
+                        },
+                        "url": { "raw": "{{base_url}}/trips/{{trip_id}}/status", "host": ["{{base_url}}"], "path": ["trips", "{{trip_id}}", "status"] }
+                    }
+                },
+                {
+                    "name": "Complete Trip (→ COMPLETED)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{driver_token}}" },
+                            { "key": "Content-Type", "value": "application/json" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"status\": \"COMPLETED\"}"
+                        },
+                        "url": { "raw": "{{base_url}}/trips/{{trip_id}}/status", "host": ["{{base_url}}"], "path": ["trips", "{{trip_id}}", "status"] }
+                    }
+                },
+                {
+                    "name": "Cancel Trip (→ CANCELLED)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{passenger_token}}" },
+                            { "key": "Content-Type", "value": "application/json" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"status\": \"CANCELLED\"}"
+                        },
+                        "url": { "raw": "{{base_url}}/trips/{{trip_id}}/status", "host": ["{{base_url}}"], "path": ["trips", "{{trip_id}}", "status"] }
+                    }
+                },
+                {
+                    "name": "Rate Trip",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{passenger_token}}" },
+                            { "key": "Content-Type", "value": "application/json" }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"rating\": 5}"
+                        },
+                        "url": { "raw": "{{base_url}}/trips/{{trip_id}}/rate", "host": ["{{base_url}}"], "path": ["trips", "{{trip_id}}", "rate"] }
+                    }
+                },
+                {
+                    "name": "Driver Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [{ "key": "Authorization", "value": "Bearer {{driver_token}}" }],
+                        "url": {
+                            "raw": "{{base_url}}/trips/stats?date=2026-05-11",
+                            "host": ["{{base_url}}"],
+                            "path": ["trips", "stats"],
+                            "query": [{ "key": "date", "value": "2026-05-11" }]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "4. Notifications",
+            "description": "Уведомления о событиях поездки. Поля: id, tripId, recipientId, type (TRIP_ASSIGNED/TRIP_STARTED/TRIP_COMPLETED/TRIP_CANCELLED), read, sentAt.",
+            "item": [
+                {
+                    "name": "Get Notifications",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var list = pm.response.json();",
+                                    "    if (list.length > 0) {",
+                                    "        pm.collectionVariables.set('notification_id', list[0].id);",
+                                    "        console.log('Notifications count: ' + list.length + ', first id=' + list[0].id + ', type=' + list[0].type);",
+                                    "    } else {",
+                                    "        console.log('No notifications yet');",
+                                    "    }",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [{ "key": "Authorization", "value": "Bearer {{driver_token}}" }],
+                        "url": { "raw": "{{base_url}}/notifications", "host": ["{{base_url}}"], "path": ["notifications"] }
+                    }
+                },
+                {
+                    "name": "Mark as Read",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [{ "key": "Authorization", "value": "Bearer {{driver_token}}" }],
+                        "url": { "raw": "{{base_url}}/notifications/{{notification_id}}", "host": ["{{base_url}}"], "path": ["notifications", "{{notification_id}}"] }
+                    }
+                }
+            ]
+        }
+    ]
 }
